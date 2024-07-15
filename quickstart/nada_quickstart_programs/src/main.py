@@ -1,20 +1,29 @@
 from nada_dsl import *
-
+def total(xs: list[SecretInteger]) -> SecretInteger:
+    return xs[0] + xs[1] + xs[2] + xs[3]
 def nada_main():
-    # Define two parties
-    party1 = Party(name="Alice")
-    party2 = Party(name="Bob")
-
-    # Input secret integers from Party1 and Party2
-    x = SecretInteger(Input(name="InputX", party=party1))
-    y = SecretInteger(Input(name="InputY", party=party2))
-
-    # Perform the computation: multiplication of the two secret integers
-    result = x * y
-
-    # Output the result to Party2
-    return [Output(result, "result_output", party2)]
-
-# Create a new nada program based on the reference program
-if __name__ == "__main__":
-    nada_main()
+    # Create the voter parties and the voting official party.
+    voters = [Party("voter" + str(v)) for v in range(4)]
+    official = Party(name="official")
+    # Gather the inputs (one vote for each candidate from each voter).
+    votes_per_candidate = [
+        [
+            SecretInteger(
+                Input(
+                    name="voter" + str(v) + "_candidate" + str(c),
+                    party=Party("voter" + str(v))
+                )
+            )
+            for v in range(4)
+        ]
+        for c in range(2)
+    ]
+    # Calculate and return the total for each candidate.
+    return [
+        Output(
+            total(votes_per_candidate[c]) - Integer(4),
+            "candidate" + str(c),
+            official
+        )
+        for c in range(2)
+    ]
